@@ -71,7 +71,7 @@ try:
 except:
     print "E: Invalid number. (%s)" % options.timecol
     sys.exit(1)
-print "option: size =", options.size
+print "option: timecol =", options.timecol
 
 try:
     options.ram = int(options.ram)
