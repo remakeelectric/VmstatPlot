@@ -64,10 +64,15 @@ class Vmstat(object):
       self.output = open(self.outfile, 'a', buffering=0)
 
   def Traffic(self, iface):
+    """
+    For a given iface, "eth1" or similar, returns traffic in/out since
+    last call, as a tuple (in_bytes, out_bytes)
+    Returns (0,0) on first call
+    """
     for line in open('/proc/net/dev', 'r'):
       if iface in line:
-        data = line[line.index(':')+1:].split()
-        rcvd, xmit = int(data[0]), int(data[8])
+        data = line.split()
+        rcvd, xmit = int(data[1]), int(data[9])
         if iface in self.traffic:
           orcv, oxmt = self.traffic.get(iface, (0, 0))
           self.traffic[iface] = (rcvd, xmit)
@@ -89,11 +94,14 @@ class Vmstat(object):
           line = self.vmstat.stdout.readline().strip()
           if not line:
             break
+
+          # Totally ignore section headers in vmstat output
           if '----' in line:
             continue
 
           line += pad(time.asctime())
           if 'swpd' in line:
+            # Add headers for our additions to vmstat headers
             if self.logfiles:
               line += ' '.join([pad(l[1]) for l in self.logfiles])
             for iface in self.interfaces:
