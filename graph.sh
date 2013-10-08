@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# this is currently hardcoded per machine....
+# Getting this wrong just makes your graph scales a little off
+MACHINE_MEM=512
+
 cd $1
 for lf in *app*.log; do
   ../vmplot.py -t $lf -c 21 -s $(wc -l $lf) -k 1024 -m 4096 $lf
