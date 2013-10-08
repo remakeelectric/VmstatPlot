@@ -3,7 +3,7 @@
 
 import fabric.api as fab
 import fabtools as fabt
-fab.env.project = "bre-sysstat"
+fab.env.project = "vmstatplot"
 
 TEMPLATE_UPSTART = """
 # Karl Palsson, June 2013, ReMake Electric ehf
@@ -40,7 +40,7 @@ def dupstart():
 
 def deploy():
     """
-    Install bre-sysstat on a host, and setup service configs
+    Install vmstatplot on a host, and setup service configs
     """
     fabt.require.files.directory("/tmp/%(project)s" % fab.env)
     fabt.require.files.file("/tmp/%(project)s/sys_stat" % fab.env,
@@ -51,7 +51,10 @@ def deploy():
 @fab.task
 def start(interval=2):
     """
-    Install and start gazing at system stats, collecting every interval secs
+    Install and start collecting every "interval" secs
+
+        $ fab start
+        $ fab start:5  # every 5 seconds
     """
     fab.env.collect_interval = interval
     deploy()
@@ -94,6 +97,9 @@ def collect(lines=2000):
     """
     Collect the current logs for each machine into a new output directory
     and generate graphs
+
+        $ fab collect
+        $ fab collect:500   # only take the last 500 lines of the log file
     """
     fab.local("mkdir -p logs")
     fab.execute(_collect, int(lines))
