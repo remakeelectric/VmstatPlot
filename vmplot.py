@@ -25,6 +25,33 @@ import fileinput
 import tempfile
 import time
 
+K = 1024
+# Map of logfile column names to gnuplot arguments and divider.
+# fields labelled "mem:" will have the divider multipled by ram size
+COLUMN_MAPPINGS = [
+('bi',      '"io:in"       axis x1y2 smooth csplines lt 5 lw 3',   1),
+('bo',      '"io:out"      axis x1y2 smooth csplines lt 1 lw 3',   1),
+('us',      '"cpu:user"    smooth csplines lt 3 lw 2',             1),
+('sy',      '"cpu:sys"     smooth csplines lt 4 lw 1',             1),
+('id',      '"cpu:idle"    smooth csplines lt 2 lw 2',             1),
+('free',    '"mem:free"    smooth csplines lt 6 lw 2',        10),
+('buff',    '"mem:buff"    smooth csplines lt 7 lw 1',        10),
+('cache',   '"mem:cache"   smooth csplines lt 8 lw 1',        10),
+('swapped', '"mem:swapped" smooth csplines lt 9 lw 2',        10),
+('eth0_i',  '"(x100kbit/s) eth0:in"  axis x1y2 smooth csplines lt 5 lw 1', 100 * K),
+('eth0_o',  '"(x100kbit/s) eth0:out" axis x1y2 smooth csplines lt 1 lw 1', 100 * K),
+('eth1_i',  '"(x100kbit/s) eth1:in"  axis x1y2 smooth csplines lt 5 lw 1', 100 * K),
+('eth1_o',  '"(x100kbit/s) eth1:out" axis x1y2 smooth csplines lt 1 lw 1', 100 * K),
+('wlan0_i', '"(x5kbit/s) wlan0:in"  axis x1y2 smooth csplines lt 5 lw 1', 5 * K),
+('wlan0_o', '"(x5kbit/s) wlan0:out" axis x1y2 smooth csplines lt 1 lw 1', 5 * K),
+('wlan1_i', '"(x5kbit/s) wlan1:in"  axis x1y2 smooth csplines lt 5 lw 1', 5 * K),
+('wlan1_o', '"(x5kbit/s) wlan1:out" axis x1y2 smooth csplines lt 1 lw 1', 5 * K),
+('syslog',  '"(LPS) syslog" axis x1y2 lt 2 lw 1',                       10),
+('http_req', '"(QPS) http_req" axis x1y2 lt 3 lw 1',                     10),
+('http_err', '"(QPSx100) http_err" axis x1y2 lt 1 lw 2',                0.1),
+]
+
+
 iocols = ['bi', 'bo']   # this might be Linux-specific...
 index = {}      # index of columns corresponding to header fields
 sums = {}       # sum of columns corresponding to header fields in iocols
@@ -158,30 +185,10 @@ if options.timecol > 0:
 else:
   plots = []
 
-K = 1024
-for col, args, div in (
-('bi',      '"io:in"       axis x1y2 smooth csplines lt 5 lw 3',   1),
-('bo',      '"io:out"      axis x1y2 smooth csplines lt 1 lw 3',   1),
-('us',      '"cpu:user"    smooth csplines lt 3 lw 2',             1),
-('sy',      '"cpu:sys"     smooth csplines lt 4 lw 1',             1),
-('id',      '"cpu:idle"    smooth csplines lt 2 lw 2',             1),
-('free',    '"mem:free"    smooth csplines lt 6 lw 2',        10 * options.ram),
-('buff',    '"mem:buff"    smooth csplines lt 7 lw 1',        10 * options.ram),
-('cache',   '"mem:cache"   smooth csplines lt 8 lw 1',        10 * options.ram),
-('swapped', '"mem:swapped" smooth csplines lt 9 lw 2',        10 * options.ram),
-('eth0_i',  '"(x100kbit/s) eth0:in"  axis x1y2 smooth csplines lt 5 lw 1', 100*K),
-('eth0_o',  '"(x100kbit/s) eth0:out" axis x1y2 smooth csplines lt 1 lw 1', 100*K),
-('eth1_i',  '"(x100kbit/s) eth1:in"  axis x1y2 smooth csplines lt 5 lw 1', 100*K),
-('eth1_o',  '"(x100kbit/s) eth1:out" axis x1y2 smooth csplines lt 1 lw 1', 100*K),
-('wlan0_i', '"(x5kbit/s) wlan0:in"  axis x1y2 smooth csplines lt 5 lw 1', 5*K),
-('wlan0_o', '"(x5kbit/s) wlan0:out" axis x1y2 smooth csplines lt 1 lw 1', 5*K),
-('wlan1_i', '"(x5kbit/s) wlan1:in"  axis x1y2 smooth csplines lt 5 lw 1', 5*K),
-('wlan1_o', '"(x5kbit/s) wlan1:out" axis x1y2 smooth csplines lt 1 lw 1', 5*K),
-('syslog',  '"(LPS) syslog" axis x1y2 lt 2 lw 1',                       10),
-('http_req','"(QPS) http_req" axis x1y2 lt 3 lw 1',                     10),
-('http_err','"(QPSx100) http_err" axis x1y2 lt 1 lw 2',                0.1),
-):
+for col, args, div in COLUMN_MAPPINGS:
   if col in index:
+    if "mem:" in args:
+      div = div * options.ram
     plots.append('"%s" using 0:($%d/%s) title %s' % (vmstat[1], 1+index[col],
                                                      div, args))
 plot.append('plot %s;' % ', '.join(plots))
