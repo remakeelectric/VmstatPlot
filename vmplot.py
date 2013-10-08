@@ -148,6 +148,11 @@ for line in fileinput.input(args[1:]):
                 cols[index[i]])
                 skip = True
         if not skip:
+            # This tries to remove most of the time stamps, so the X axis isn't
+            # too crowded (And offset them a little from the origin)
+            # we need options.size ahead of time as we are processing line by line...
+            # We could assume that a log file is never going to be "too big" and process in ram first,
+            # and calculate this automatically....
             if len(cols) > options.timecol-1 and (lc % int(options.size/5)) != 5:
               line = line.replace(cols[options.timecol-1], "''")
             os.write(vmstat[0], line)
