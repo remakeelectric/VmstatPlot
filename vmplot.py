@@ -46,7 +46,7 @@ def build_column_index(x):
 parser = optparse.OptionParser()
 parser.add_option("-t", "--title", default=os.path.basename(os.getcwd()), help="graph title")
 parser.add_option("-e", "--email", default=None, help="graph author email address")
-parser.add_option("-c", "--timecol", default=0, help="column with current time")
+parser.add_option("-c", "--timecol", default=20, help="column with current time")
 parser.add_option("-k", "--kilobytes", default=0, help="throughput axis scale")
 parser.add_option("-m", "--ram", default=4096, help="megabytes of RAM available")
 parser.add_option("-s", "--size", default=7200, help="number of data points")
