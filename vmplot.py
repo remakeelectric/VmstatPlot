@@ -76,7 +76,6 @@ parser.add_option("-e", "--email", default=None, help="graph author email addres
 parser.add_option("-c", "--timecol", default=20, help="column with current time")
 parser.add_option("-k", "--kilobytes", default=0, help="throughput axis scale")
 parser.add_option("-m", "--ram", default=4096, help="megabytes of RAM available")
-parser.add_option("-s", "--size", default=7200, help="number of data points")
 parser.add_option("-p", "--postscript", action="store_true", default=False, help="additional PostScript graph output")
 parser.add_option("-r", "--retain", action="store_true", default=False, help="retain temporary files")
 parser.add_option("-4", "--slc4", action="store_true", default=False, help="SLC4 (gnuplot 4.0) compatibility")
@@ -85,13 +84,6 @@ parser.add_option("-4", "--slc4", action="store_true", default=False, help="SLC4
 print "option: title =", options.title
 print "option: email =", options.email
 print "args: %s" % args
-
-try:
-    options.size = int(options.size)
-except:
-    print "E: Invalid number. (%s)" % options.size
-    sys.exit(1)
-print "option: size =", options.size
 
 try:
     options.timecol = int(options.timecol)
@@ -116,11 +108,8 @@ print "option: kilobytes =", options.kilobytes
 
 print "option: postscript =", options.postscript
 
-vmstat = tempfile.mkstemp('.tmp', 'vmplot-vmstat-')
-if options.retain:
-    print "sanitized vmstat file:", vmstat[1]
-
-for line in fileinput.input(args[1:]):
+outlines = []
+for line in fileinput.input(args):
     if 'procs' in line:
         continue
     cols = line.split()
@@ -148,16 +137,22 @@ for line in fileinput.input(args[1:]):
                 cols[index[i]])
                 skip = True
         if not skip:
-            # This tries to remove most of the time stamps, so the X axis isn't
-            # too crowded (And offset them a little from the origin)
-            # we need options.size ahead of time as we are processing line by line...
-            # We could assume that a log file is never going to be "too big" and process in ram first,
-            # and calculate this automatically....
-            if len(cols) > options.timecol-1 and (lc % int(options.size/5)) != 5:
-              line = line.replace(cols[options.timecol-1], "''")
-            os.write(vmstat[0], line)
+            outlines.append(line)
             lc += 1
 
+# This tries to remove most of the time stamps, so the X axis isn't
+# too crowded (And offset them a little from the origin)
+# We do this after processing all lines so we don't have to be told in advance
+# how many lines are in the file
+vmstat = tempfile.mkstemp('.tmp', 'vmplot-vmstat-')
+if options.retain:
+    print "sanitized vmstat file:", vmstat[1]
+
+for i, l in enumerate(outlines):
+    if i % (lc / 5) != 5:
+        time_field = l.split()[options.timecol - 1]
+        l = l.replace(time_field, "''")
+    os.write(vmstat[0], l)
 os.close(vmstat[0])
 
 options.label = time.strftime("%F %T", time.localtime())
