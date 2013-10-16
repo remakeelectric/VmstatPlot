@@ -49,7 +49,7 @@ def deploy():
 
 
 @fab.task
-def start(interval=2):
+def start(interval=1):
     """
     Install and start collecting every "interval" secs
 
